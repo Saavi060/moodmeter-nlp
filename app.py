@@ -1,36 +1,63 @@
 import streamlit as st
+import pandas as pd
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 # Page configuration
 st.set_page_config(
-    page_title="MoodMeter",
+    page_title="MoodMeter | Sentiment Analysis",
     page_icon="💜",
     layout="centered"
 )
 
-# Initialize sentiment analyzer
+# Initialize NLP analyzer
 analyzer = SentimentIntensityAnalyzer()
 
-# Custom styling
+# Custom CSS
 st.markdown("""
 <style>
 .stApp {
-    background-color: #FAF8FC;
+    background: #FAF8FC;
 }
+
 h1 {
-    color: #76558F;
+    color: #74528F;
     text-align: center;
+    font-size: 42px !important;
 }
+
 .subtitle {
     text-align: center;
-    color: #777777;
+    color: #777080;
     font-size: 17px;
+    margin-bottom: 30px;
+}
+
+.section-title {
+    color: #74528F;
+    font-size: 23px;
+    font-weight: bold;
+}
+
+.result-box {
+    background: #F0E8F7;
+    padding: 22px;
+    border-radius: 15px;
+    text-align: center;
+    margin: 15px 0;
+}
+
+.footer {
+    text-align: center;
+    color: #999;
+    font-size: 13px;
+    padding: 25px;
 }
 </style>
 """, unsafe_allow_html=True)
 
 # Application heading
 st.title("MoodMeter")
+
 st.markdown(
     '<p class="subtitle">Understanding emotions, one sentence at a time.</p>',
     unsafe_allow_html=True
@@ -38,49 +65,71 @@ st.markdown(
 
 st.divider()
 
-st.subheader("Analyse Your Text")
+# Introduction
+st.markdown(
+    '<p class="section-title">Explore the Sentiment Behind Your Words</p>',
+    unsafe_allow_html=True
+)
 
 st.write(
-    "Enter a sentence or paragraph below. "
-    "MoodMeter will analyse its emotional tone."
+    "Enter any English sentence or paragraph. "
+    "Our NLP system will analyse its emotional tone "
+    "and identify its overall sentiment."
 )
 
 # Text input
 user_text = st.text_area(
-    "Enter your text here:",
-    placeholder="Example: I am having a wonderful day!",
-    height=150
+    "Your text",
+    placeholder="Example: I had an amazing day today. I feel happy and grateful!",
+    height=160
 )
 
-# Analysis button
+if user_text.strip():
+    st.caption(
+        f"Characters: {len(user_text)} | Words: {len(user_text.split())}"
+    )
+
+# Analyse button
 if st.button("Analyse Sentiment", use_container_width=True):
 
     if user_text.strip():
 
-        # Perform sentiment analysis
         scores = analyzer.polarity_scores(user_text)
-
         compound = scores["compound"]
 
-        # Classify sentiment
+        # Sentiment classification
         if compound >= 0.05:
-            sentiment = "Positive"
-            explanation = "Your text expresses predominantly positive sentiment."
+            sentiment = "POSITIVE"
+            emoji = "☀️"
+            explanation = "The text expresses predominantly positive sentiment."
         elif compound <= -0.05:
-            sentiment = "Negative"
-            explanation = "Your text expresses predominantly negative sentiment."
+            sentiment = "NEGATIVE"
+            emoji = "🌧️"
+            explanation = "The text expresses predominantly negative sentiment."
         else:
-            sentiment = "Neutral"
-            explanation = "Your text expresses predominantly neutral sentiment."
+            sentiment = "NEUTRAL"
+            emoji = "☁️"
+            explanation = "The text expresses predominantly neutral sentiment."
 
-        # Display results
         st.divider()
-        st.subheader("Your Analysis Results")
 
-        st.success(f"Overall Sentiment: {sentiment}")
+        st.markdown(
+            '<p class="section-title">Your Analysis Results</p>',
+            unsafe_allow_html=True
+        )
 
-        st.write(explanation)
+        st.markdown(
+            f"""
+            <div class="result-box">
+                <h1>{emoji}</h1>
+                <h2 style="color:#74528F;">{sentiment}</h2>
+                <p style="color:#62596A;">{explanation}</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
+        # Score breakdown
         st.subheader("Sentiment Score Breakdown")
 
         col1, col2, col3 = st.columns(3)
@@ -89,21 +138,49 @@ if st.button("Analyse Sentiment", use_container_width=True):
         col2.metric("Neutral", f"{scores['neu'] * 100:.1f}%")
         col3.metric("Negative", f"{scores['neg'] * 100:.1f}%")
 
-        st.write("Sentiment Intensity")
+        # Visualisation
+        st.subheader("Visual Representation")
+
+        chart_data = pd.DataFrame(
+            {
+                "Sentiment": ["Positive", "Neutral", "Negative"],
+                "Score": [
+                    scores["pos"],
+                    scores["neu"],
+                    scores["neg"]
+                ]
+            }
+        )
+
+        st.bar_chart(
+            chart_data.set_index("Sentiment")
+        )
+
+        st.subheader("Overall Sentiment Intensity")
 
         st.progress(
             min(1.0, abs(compound)),
-            text=f"Compound score: {compound:.3f}"
+            text=f"Compound Score: {compound:.3f}"
+        )
+
+        st.info(
+            "The compound score ranges from -1 (most negative) "
+            "to +1 (most positive)."
         )
 
         st.caption(
             "Note: Sentiment analysis identifies the emotional tone "
-            "of text. It does not determine a person's actual mental state."
+            "of written text. It does not diagnose or determine "
+            "a person's actual psychological state."
         )
 
     else:
         st.warning("Please enter some text before analysing.")
 
+# Footer
 st.divider()
 
-st.caption("MoodMeter | An NLP Sentiment Analysis Project")
+st.markdown(
+    '<p class="footer">MOODMETER | NLP SENTIMENT ANALYSIS PROJECT</p>',
+    unsafe_allow_html=True
+)
